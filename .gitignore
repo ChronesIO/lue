@@ -1,2 +1,7 @@
+.vs/
+.code/
+.idea/
+.fleet/
+
 /target
 /Cargo.lock
