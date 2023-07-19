@@ -10,23 +10,23 @@ pub trait LueLayout {
     fn taffy_mut(&self) -> &mut Taffy;
     fn taffy_node(&self) -> &taffy::node::Node;
 
-    fn _on_attached_node(&mut self, node: &Arc<LueNode>);
-    fn _on_detached_node(&mut self, node: &Arc<LueNode>);
+    fn _on_attached_node(&mut self, node: &Rc<LueNode>);
+    fn _on_detached_node(&mut self, node: &Rc<LueNode>);
 
-    fn _on_attached_self(&mut self, node: &Arc<LueNode>);
-    fn _on_detached_self(&mut self, node: &Arc<LueNode>);
+    fn _on_attached_self(&mut self, node: &Rc<LueNode>);
+    fn _on_detached_self(&mut self, node: &Rc<LueNode>);
 }
 
 pub struct LueStandardLayout {
-    obj_self: obj_type!(Self with ArcWeak),
+    obj_self: obj_type!(Self with RcWeak),
 
     host: OnceCell<*mut LueNode>,
 
-    taffy: Arc<Taffy>,
+    taffy: Rc<Taffy>,
     taffy_raw: *mut Taffy,
     taffy_node: taffy::node::Node,
 }
-obj_impl!(LueStandardLayout with Arc);
+obj_impl!(LueStandardLayout with Rc);
 
 impl LueLayout for LueStandardLayout {
     fn host_ref(&self) -> &LueNode {
@@ -59,7 +59,7 @@ impl LueLayout for LueStandardLayout {
         &self.taffy_node
     }
 
-    fn _on_attached_node(&mut self, node: &Arc<LueNode>) {
+    fn _on_attached_node(&mut self, node: &Rc<LueNode>) {
         let taf = self.taffy_mut();
 
         // add child node to self
@@ -68,7 +68,7 @@ impl LueLayout for LueStandardLayout {
             node.layout_ref().taffy_node().clone(),
         );
     }
-    fn _on_detached_node(&mut self, node: &Arc<LueNode>) {
+    fn _on_detached_node(&mut self, node: &Rc<LueNode>) {
         let taf = self.taffy_mut();
 
         // remove child node from self
@@ -78,6 +78,6 @@ impl LueLayout for LueStandardLayout {
         );
     }
 
-    fn _on_attached_self(&mut self, node: &Arc<LueNode>) {}
-    fn _on_detached_self(&mut self, node: &Arc<LueNode>) {}
+    fn _on_attached_self(&mut self, node: &Rc<LueNode>) {}
+    fn _on_detached_self(&mut self, node: &Rc<LueNode>) {}
 }

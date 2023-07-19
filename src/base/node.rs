@@ -3,28 +3,28 @@ use std::{error::Error, ops::Deref};
 use crate::{base::layout::LueLayout, obj_impl, obj_type, t2a_type_vec, using::*};
 
 pub struct LueNode {
-    obj_self: obj_type!(Self with ArcWeak),
+    obj_self: obj_type!(Self with RcWeak),
 
-    pub upper: Option<Arc<Self>>,
+    pub upper: Option<Rc<Self>>,
     pub upper_raw: *mut Self,
 
-    pub lower: Vec<Arc<Self>>,
+    pub lower: Vec<Rc<Self>>,
     pub lower_raw: Vec<*mut Self>,
 
-    pub(crate) layout: OnceCell<Arc<dyn LueLayout>>,
+    pub(crate) layout: OnceCell<Rc<dyn LueLayout>>,
     pub(crate) layout_raw: OnceCell<*mut dyn LueLayout>,
     pub(crate) layout_t2a: OnceCell<t2a_type_vec!()>,
 
-    system: Arc<dyn Any>, // Todo: Change type to system
+    system: Rc<dyn Any>, // Todo: Change type to system
 }
-obj_impl!(LueNode with Arc);
+obj_impl!(LueNode with Rc);
 
 impl LueNode {
     pub fn has_upper(&self) -> bool {
         self.upper.is_some()
     }
 
-    pub fn has_lower(&self, node: &Arc<Self>) -> bool {
+    pub fn has_lower(&self, node: &Rc<Self>) -> bool {
         self.has_lower_ref(node.as_ref())
     }
     pub fn has_lower_ref(&self, node_ref: &Self) -> bool {
@@ -58,11 +58,7 @@ impl LueNode {
         unsafe { self.layout_t2a.get().unwrap_unchecked() }
     }
 
-    pub(crate) fn _attach_node(
-        &mut self,
-        node: &Arc<Self>,
-        index: Option<usize>,
-    ) -> Result<(), ()> {
+    pub(crate) fn _attach_node(&mut self, node: &Rc<Self>, index: Option<usize>) -> Result<(), ()> {
         if self.has_lower(node) {
             return Err(());
         }
@@ -79,7 +75,7 @@ impl LueNode {
 
         Ok(())
     }
-    pub(crate) fn _detach_node(&mut self, node: &Arc<Self>) -> Result<(), ()> {
+    pub(crate) fn _detach_node(&mut self, node: &Rc<Self>) -> Result<(), ()> {
         let node_ref = node.as_ref() as *const _;
         if let Some(s) = self
             .lower_raw
@@ -93,7 +89,7 @@ impl LueNode {
         Err(())
     }
 
-    pub(crate) fn _attach_self(&mut self, node: &Arc<Self>) -> Result<(), ()> {
+    pub(crate) fn _attach_self(&mut self, node: &Rc<Self>) -> Result<(), ()> {
         if self.upper.is_some() {
             return Err(());
         }
@@ -115,29 +111,29 @@ impl LueNode {
         Ok(())
     }
 
-    pub(crate) fn _on_attached_node(&mut self, node: &Arc<Self>) {
+    pub(crate) fn _on_attached_node(&mut self, node: &Rc<Self>) {
         // trigger event in layout
         unsafe {
-            self.layout.get().unwrap_unchecked()._on_attached_node(node);
+            self.layout_mut()._on_attached_node(node);
         }
     }
-    pub(crate) fn _on_detached_node(&mut self, node: &Arc<Self>) {
+    pub(crate) fn _on_detached_node(&mut self, node: &Rc<Self>) {
         // trigger event in layout
         unsafe {
-            self.layout.get().unwrap_unchecked()._on_detached_node(node);
+            self.layout_mut()._on_detached_node(node);
         }
     }
 
-    pub(crate) fn _on_attached_self(&mut self, node: &Arc<Self>) {
+    pub(crate) fn _on_attached_self(&mut self, node: &Rc<Self>) {
         // trigger event in layout
         unsafe {
-            self.layout.get().unwrap_unchecked()._on_attached_self(node);
+            self.layout_mut()._on_attached_self(node);
         }
     }
-    pub(crate) fn _on_detached_self(&mut self, node: &Arc<Self>) {
+    pub(crate) fn _on_detached_self(&mut self, node: &Rc<Self>) {
         // trigger event in layout
         unsafe {
-            self.layout.get().unwrap_unchecked()._on_detached_self(node);
+            self.layout_mut()._on_detached_self(node);
         }
     }
 }
