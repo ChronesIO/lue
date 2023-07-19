@@ -1,7 +1,7 @@
 // Temporarly enabled
 #![allow(unused)]
 
-// Pernament enabled
+// Pernamently enabled
 #![allow(mutable_transmutes)]
 
 pub(crate) mod base;
