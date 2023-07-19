@@ -11,15 +11,19 @@ pub struct LueNode {
     pub lower: Vec<Arc<Self>>,
     pub lower_raw: Vec<*mut Self>,
 
-    pub layout: OnceCell<Arc<dyn LueLayout>>,
-    pub layout_raw: OnceCell<*mut dyn LueLayout>,
-    pub layout_t2a: OnceCell<t2a_type_vec!()>,
+    pub(crate) layout: OnceCell<Arc<dyn LueLayout>>,
+    pub(crate) layout_raw: OnceCell<*mut dyn LueLayout>,
+    pub(crate) layout_t2a: OnceCell<t2a_type_vec!()>,
 
     system: Arc<dyn Any>, // Todo: Change type to system
 }
 obj_impl!(LueNode with Arc);
 
 impl LueNode {
+    pub fn has_upper(&self) -> bool {
+        self.upper.is_some()
+    }
+
     pub fn has_lower(&self, node: &Arc<Self>) -> bool {
         self.has_lower_ref(node.as_ref())
     }
@@ -30,7 +34,30 @@ impl LueNode {
             None => false,
         }
     }
-    
+
+    pub fn layout_ref(&self) -> &dyn LueLayout {
+        unsafe {
+            self.layout_raw
+                .get()
+                .unwrap_unchecked()
+                .as_ref()
+                .unwrap_unchecked()
+        }
+    }
+    pub fn layout_mut(&mut self) -> &mut dyn LueLayout {
+        unsafe {
+            self.layout_raw
+                .get()
+                .unwrap_unchecked()
+                .as_mut()
+                .unwrap_unchecked()
+        }
+    }
+
+    pub fn layout_t2a(&self) -> &t2a_type_vec!() {
+        unsafe { self.layout_t2a.get().unwrap_unchecked() }
+    }
+
     pub(crate) fn _attach_node(
         &mut self,
         node: &Arc<Self>,
