@@ -10,11 +10,11 @@ pub trait LueLayout {
     fn taffy_mut(&self) -> &mut Taffy;
     fn taffy_node(&self) -> &taffy::node::Node;
 
-    fn _on_attached_node(&mut self, node: &Rc<LueNode>);
-    fn _on_detached_node(&mut self, node: &Rc<LueNode>);
+    fn _on_attached_node(&mut self, node: &Rc<UnsafeCell<LueNode>>);
+    fn _on_detached_node(&mut self, node: &Rc<UnsafeCell<LueNode>>);
 
-    fn _on_attached_self(&mut self, node: &Rc<LueNode>);
-    fn _on_detached_self(&mut self, node: &Rc<LueNode>);
+    fn _on_attached_self(&mut self, node: &Rc<UnsafeCell<LueNode>>);
+    fn _on_detached_self(&mut self, node: &Rc<UnsafeCell<LueNode>>);
 }
 
 pub struct LueStandardLayout {
@@ -59,25 +59,33 @@ impl LueLayout for LueStandardLayout {
         &self.taffy_node
     }
 
-    fn _on_attached_node(&mut self, node: &Rc<LueNode>) {
+    fn _on_attached_node(&mut self, node: &Rc<UnsafeCell<LueNode>>) {
         let taf = self.taffy_mut();
 
         // add child node to self
-        taf.add_child(
-            self.taffy_node.clone(),
-            node.layout_ref().taffy_node().clone(),
-        );
+        taf.add_child(self.taffy_node.clone(), unsafe {
+            node.get()
+                .as_ref()
+                .unwrap()
+                .layout_ref()
+                .taffy_node()
+                .clone()
+        });
     }
-    fn _on_detached_node(&mut self, node: &Rc<LueNode>) {
+    fn _on_detached_node(&mut self, node: &Rc<UnsafeCell<LueNode>>) {
         let taf = self.taffy_mut();
 
         // remove child node from self
-        taf.remove_child(
-            self.taffy_node.clone(),
-            node.layout_ref().taffy_node().clone(),
-        );
+        taf.remove_child(self.taffy_node.clone(), unsafe {
+            node.get()
+                .as_ref()
+                .unwrap()
+                .layout_ref()
+                .taffy_node()
+                .clone()
+        });
     }
 
-    fn _on_attached_self(&mut self, node: &Rc<LueNode>) {}
-    fn _on_detached_self(&mut self, node: &Rc<LueNode>) {}
+    fn _on_attached_self(&mut self, node: &Rc<UnsafeCell<LueNode>>) {}
+    fn _on_detached_self(&mut self, node: &Rc<UnsafeCell<LueNode>>) {}
 }

@@ -1,5 +1,5 @@
-use crate::{base::node::LueNode, obj_impl, obj_type, using::*};
 use crate::base::obj::ObjImpl;
+use crate::{base::node::LueNode, obj_impl, obj_type, using::*};
 
 pub struct LueSystem {
     obj_self: obj_type!(Self with RcWeak),
@@ -8,13 +8,13 @@ obj_impl!(LueSystem with Rc);
 
 impl LueSystem {
     fn attach_node(
-        node: &Rc<LueNode>,
-        upper: &Rc<LueNode>,
+        node: &Rc<UnsafeCell<LueNode>>,
+        upper: &Rc<UnsafeCell<LueNode>>,
         index: Option<usize>,
     ) -> Result<(), ()> {
         // allow mutable
-        let upper_mut = unsafe { transmute::<_, &mut LueNode>(upper.as_ref()) };
-        let node_mut = unsafe { transmute::<_, &mut LueNode>(node.as_ref()) };
+        let upper_mut = unsafe { &mut *upper.get() };
+        let node_mut = unsafe { &mut *upper.get() };
 
         // attach upper to lower first
         if upper_mut._attach_node(node, index).is_err() {
@@ -34,19 +34,19 @@ impl LueSystem {
 
         Ok(())
     }
-    fn detach_node(node: &Rc<LueNode>) -> Result<(), ()> {
+    fn detach_node(node: &Rc<UnsafeCell<LueNode>>) -> Result<(), ()> {
         // allow mutable
-        let node_raw = unsafe { transmute::<_, &mut LueNode>(node.as_ref()) };
+        let node_raw = unsafe { node.get().as_mut().unwrap() };
 
         // get upper node first
-        let upper = node.upper.as_ref();
+        let upper = unsafe { node.get().as_ref().unwrap().upper.as_ref() };
 
         // check if lower contains upper
         if upper.is_none() {
             return Err(());
         }
         let mut upper = upper.unwrap();
-        let mut upper_raw = unsafe { node.upper_raw.as_mut().unwrap() };
+        let mut upper_raw = unsafe { node.get().as_ref().unwrap().upper_raw.as_mut().unwrap() };
 
         // detach at upper
         if upper_raw._detach_node(node).is_err() {

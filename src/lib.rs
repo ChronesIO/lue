@@ -2,7 +2,7 @@
 #![allow(unused)]
 
 // Permanently enabled
-#![allow(mutable_transmutes)]
+// #![allow(mutable_transmutes)]
 
 pub(crate) mod base;
 pub(crate) mod using;

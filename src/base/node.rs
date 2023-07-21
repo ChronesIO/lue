@@ -5,10 +5,10 @@ use crate::{base::layout::LueLayout, obj_impl, obj_type, t2a_type_vec, using::*}
 pub struct LueNode {
     obj_self: obj_type!(Self with RcWeak),
 
-    pub upper: Option<Rc<Self>>,
+    pub upper: Option<Rc<UnsafeCell<Self>>>,
     pub upper_raw: *mut Self,
 
-    pub lower: Vec<Rc<Self>>,
+    pub lower: Vec<Rc<UnsafeCell<Self>>>,
     pub lower_raw: Vec<*mut Self>,
 
     pub(crate) layout: OnceCell<Rc<dyn LueLayout>>,
@@ -24,8 +24,8 @@ impl LueNode {
         self.upper.is_some()
     }
 
-    pub fn has_lower(&self, node: &Rc<Self>) -> bool {
-        self.has_lower_ref(node.as_ref())
+    pub fn has_lower(&self, node: &Rc<UnsafeCell<Self>>) -> bool {
+        self.has_lower_ref(unsafe { node.get().as_ref().unwrap() })
     }
     pub fn has_lower_ref(&self, node_ref: &Self) -> bool {
         let node_ptr = node_ref as *const _;
@@ -58,7 +58,7 @@ impl LueNode {
         unsafe { self.layout_t2a.get().unwrap_unchecked() }
     }
 
-    pub(crate) fn _attach_node(&mut self, node: &Rc<Self>, index: Option<usize>) -> Result<(), ()> {
+    pub(crate) fn _attach_node(&mut self, node: &Rc<UnsafeCell<Self>>, index: Option<usize>) -> Result<(), ()> {
         if self.has_lower(node) {
             return Err(());
         }
@@ -75,7 +75,7 @@ impl LueNode {
 
         Ok(())
     }
-    pub(crate) fn _detach_node(&mut self, node: &Rc<Self>) -> Result<(), ()> {
+    pub(crate) fn _detach_node(&mut self, node: &Rc<UnsafeCell<Self>>) -> Result<(), ()> {
         let node_ref = node.as_ref() as *const _;
         if let Some(s) = self
             .lower_raw
@@ -89,7 +89,7 @@ impl LueNode {
         Err(())
     }
 
-    pub(crate) fn _attach_self(&mut self, node: &Rc<Self>) -> Result<(), ()> {
+    pub(crate) fn _attach_self(&mut self, node: &Rc<UnsafeCell<Self>>) -> Result<(), ()> {
         if self.upper.is_some() {
             return Err(());
         }
@@ -111,26 +111,26 @@ impl LueNode {
         Ok(())
     }
 
-    pub(crate) fn _on_attached_node(&mut self, node: &Rc<Self>) {
+    pub(crate) fn _on_attached_node(&mut self, node: &Rc<UnsafeCell<Self>>) {
         // trigger event in layout
         unsafe {
             self.layout_mut()._on_attached_node(node);
         }
     }
-    pub(crate) fn _on_detached_node(&mut self, node: &Rc<Self>) {
+    pub(crate) fn _on_detached_node(&mut self, node: &Rc<UnsafeCell<Self>>) {
         // trigger event in layout
         unsafe {
             self.layout_mut()._on_detached_node(node);
         }
     }
 
-    pub(crate) fn _on_attached_self(&mut self, node: &Rc<Self>) {
+    pub(crate) fn _on_attached_self(&mut self, node: &Rc<UnsafeCell<Self>>) {
         // trigger event in layout
         unsafe {
             self.layout_mut()._on_attached_self(node);
         }
     }
-    pub(crate) fn _on_detached_self(&mut self, node: &Rc<Self>) {
+    pub(crate) fn _on_detached_self(&mut self, node: &Rc<UnsafeCell<Self>>) {
         // trigger event in layout
         unsafe {
             self.layout_mut()._on_detached_self(node);
